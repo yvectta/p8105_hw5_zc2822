@@ -6,6 +6,7 @@ output: github_document
 
 ```{r setup, include=FALSE, message=FALSE}
 library(tidyverse)
+library(broom)
 ```
 
 
@@ -88,4 +89,73 @@ sim_results |>
        x = "True mu",
        y = "Average estimate of mu in rejected samples")
 ```
+
+## Problem 3
+
+```{r}
+homicide = read.csv("data/homicide-data.csv")
+```
+
+The homicide data has `r nrow(homicide)` rows and `r ncol(homicide)` columns. The variables are: `r colnames(homicide)`.
+
+Create a city_state variable (e.g. “Baltimore, MD”) and then summarize within cities to obtain the total number of homicides and the number of unsolved homicides (those for which the disposition is “Closed without arrest” or “Open/No arrest”).
+
+```{r}
+homicide_summary = homicide |>
+  mutate(state = if_else(city == "Tulsa" & state == "AL", "OK", state)) |> 
+  mutate(city_state = paste(city, state, sep = ", ")) |>  
+  group_by(city_state) |> 
+  summarize(
+    total_homicides = n(), 
+    unsolved_homicides = sum(disposition %in% c("Closed without arrest", "Open/No arrest"))
+  )
+```
+
+For the city of Baltimore, MD, use the prop.test function to estimate the proportion of homicides that are unsolved; save the output of prop.test as an R object, apply the broom::tidy to this object and pull the estimated proportion and confidence intervals from the resulting tidy dataframe.
+
+```{r}
+baltimore_data = homicide_summary |> 
+  filter(city_state == "Baltimore, MD")
+
+prop_test_result = prop.test(baltimore_data$unsolved_homicides, baltimore_data$total_homicides)
+tidy_result = broom::tidy(prop_test_result)
+
+est_prop = tidy_result$estimate
+ci_low = tidy_result$conf.low
+ci_high = tidy_result$conf.high
+
+cat("estimated proportion:", est_prop)
+cat("confidence interval:", "[", ci_low, ci_high, "]", sep = "")
+```
+
+Now run prop.test for each of the cities in your dataset, and extract both the proportion of unsolved homicides and the confidence interval for each. Do this within a “tidy” pipeline, making use of purrr::map, purrr::map2, list columns and unnest as necessary to create a tidy dataframe with estimated proportions and CIs for each city.
+
+```{r}
+eachcity_prop = homicide_summary |> 
+  mutate(
+    prop_test = map2(unsolved_homicides, total_homicides, ~ tidy(prop.test(.x, .y))),
+    estimate = map(prop_test, ~.x$estimate),
+    conf.low = map(prop_test, ~.x$conf.low),
+    conf.high = map(prop_test, ~.x$conf.high)
+  ) |>
+  unnest(c(estimate, conf.low, conf.high)) |>
+  select(city_state, estimate, conf.low, conf.high)
+
+eachcity_prop
+```
+
+```{r}
+eachcity_prop |> 
+  arrange(estimate) |> 
+  ggplot(aes(x = reorder(city_state, estimate), y = estimate)) +
+  geom_point() +  
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) + 
+  coord_flip() +  
+  labs(
+    title = "Proportion of unsolved homicides by city",
+    x = "City",
+    y = "Proportion of unsolved homicides"
+  )
+```
+
 
