@@ -70,7 +70,7 @@ sim_results = mu |>
   bind_rows()
 ```
 
-Make a plot showing the proportion of times the null was rejected (the power of the test) on the y axis and the true value of 𝜇on the x axis. Describe the association between effect size and power.
+**Plot showing the proportion of times the null was rejected (the power of the test)** 
 
 ```{r}
 sim_results |> 
@@ -84,10 +84,9 @@ sim_results |>
        y = "Power (Proportion of Null Rejections)")
 ```
 
-Make a plot showing the average estimate of 𝜇̂ on the y axis and the true value of 𝜇
- on the x axis. 
+As mu increases, power rises, the proportion of times the null was rejected inceases, which means the test is more likely to detect a true effect. Small increases in mu quickly raise the power, but it levels off close to 1 as mu gets larger.
  
-
+**Plot showing the average estimate of $\hat{\mu}$ vs true $\mu$.**
 
 ```{r}
 sim_results |> 
@@ -101,11 +100,7 @@ sim_results |>
        y = "Average Estimate of mu")
 ```
 
- Make a second plot (or overlay on the first) the average estimate of 𝜇̂ 
- only in samples for which the null was rejected on the y axis and the true value of 𝜇
- on the x axis. Is the sample average of 𝜇̂ 
- across tests for which the null is rejected approximately equal to the true value of 𝜇
-? Why or why not?
+**Plot showing the average estimate of $\hat{\mu}$ only in samples for which the null was rejected vs true $\mu$.**
 
 ```{r}
 sim_results |> 
@@ -120,6 +115,9 @@ sim_results |>
        y = "Average estimate of mu in rejected samples")
 ```
 
+No, the average of $\hat{\mu}$ for tests where the null is rejected is usually higher than the true value of $\mu$. This happens because tests with larger values are more likely to reject the null.
+
+
 ## Problem 3
 
 ```{r}
@@ -128,7 +126,7 @@ homicide = read.csv("data/homicide-data.csv")
 
 The homicide data has `r nrow(homicide)` rows and `r ncol(homicide)` columns. The variables are: `r colnames(homicide)`.
 
-Create a city_state variable (e.g. “Baltimore, MD”) and then summarize within cities to obtain the total number of homicides and the number of unsolved homicides (those for which the disposition is “Closed without arrest” or “Open/No arrest”).
+**Summary within cities of the total number of homicides and the number of unsolved homicides.**
 
 ```{r}
 homicide_summary = homicide |>
@@ -139,9 +137,11 @@ homicide_summary = homicide |>
     total_homicides = n(), 
     unsolved_homicides = sum(disposition %in% c("Closed without arrest", "Open/No arrest"))
   )
+
+homicide_summary
 ```
 
-For the city of Baltimore, MD, use the prop.test function to estimate the proportion of homicides that are unsolved; save the output of prop.test as an R object, apply the broom::tidy to this object and pull the estimated proportion and confidence intervals from the resulting tidy dataframe.
+**For Baltimore, MD.**
 
 ```{r}
 baltimore_data = homicide_summary |> 
@@ -158,7 +158,7 @@ cat("estimated proportion:", est_prop)
 cat("confidence interval:", "[", ci_low, ci_high, "]", sep = "")
 ```
 
-Now run prop.test for each of the cities in your dataset, and extract both the proportion of unsolved homicides and the confidence interval for each. Do this within a “tidy” pipeline, making use of purrr::map, purrr::map2, list columns and unnest as necessary to create a tidy dataframe with estimated proportions and CIs for each city.
+**prop.test for each of the cities.**
 
 ```{r}
 eachcity_prop = homicide_summary |> 
@@ -173,6 +173,8 @@ eachcity_prop = homicide_summary |>
 
 eachcity_prop
 ```
+
+**Plot showing the estimates and CIs for each city.**
 
 ```{r}
 eachcity_prop |> 
